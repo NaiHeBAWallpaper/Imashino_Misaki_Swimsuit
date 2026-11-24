@@ -467,6 +467,8 @@ function init() {
 			if (props.dialogy) textbox.style.top = props.dialogy.value + '%';
 			if (props.drawHitboxes) mouseOptions.drawHitboxes = props.drawHitboxes.value;
 			if (props.lensflare) {
+				glareEnabled = props.lensflare.value;
+				if (spineData) applyGlareOpacity(spineData.skeleton.data);
 				showLensflare = props.lensflare.value;
 				if (showLensflare) restoreSpecifiedSlots();
 			}
@@ -721,6 +723,29 @@ function load(dynamicBinaryPath, dynamicAtlasPath) {
 	canvas.style.visibility = 'visible';
 }
 
+const GLARE_SLOTS = new Set([
+	"FX_ground", "FX_ground4", "FX_ground2", "FX_ground5",
+	"FX_ground3", "FX_ground6", "FX_spark", "FX_spark2",
+	"FX_sunlight", "FX_sunlight2", "FX_lens_flare", "FX_lens_flare4",
+	"FX_lens_flare2", "FX_lens_flare3", "FX_lens_flare5", "00_FX_ground",
+	"00_FX_sunlight"
+]);
+const GLARE_OPACITY = 0.24;
+let glareEnabled = true;
+const originalGlareOpacity = new WeakMap();
+
+// Scale attachment opacity once so animated slot colors still control the light.
+function applyGlareOpacity(skeletonData) {
+	for (const skin of skeletonData.skins) {
+		for (const { slotIndex, attachment } of skin.getAttachments()) {
+			const slot = skeletonData.slots[slotIndex];
+			if (!GLARE_SLOTS.has(slot.name) || slot.blendMode !== 1 || !attachment.color) continue;
+			if (!originalGlareOpacity.has(attachment)) originalGlareOpacity.set(attachment, attachment.color.a);
+			attachment.color.a = originalGlareOpacity.get(attachment) * (glareEnabled ? GLARE_OPACITY : 0);
+		}
+	}
+}
+
 function loadSpineData(binaryPath, atlasPath, premultipliedAlpha) {
 	// Load the texture atlas from the AssetManager.
 	let atlas = assetManager.get(atlasPath);
@@ -734,6 +759,7 @@ function loadSpineData(binaryPath, atlasPath, premultipliedAlpha) {
 	// Set the scale to apply during parsing, parse the file, and create a new skeleton.
 	skeletonBinary.scale = 1;
 	let skeletonData = skeletonBinary.readSkeletonData(assetManager.get(binaryPath));
+	applyGlareOpacity(skeletonData);
 	let skeleton = new spine.Skeleton(skeletonData);
 	let bounds = calculateSetupPoseBounds(skeleton);
 
@@ -759,11 +785,7 @@ let showLensflare = false;
 let slotsHidden = false;
 
 // 定义需要隐藏的骨骼名称列表（全局变量）
-const slotsToHide = [
-	"FX_ground", "FX_ground2", "FX_groun3",  "FX_ground4", "FX_ground5", "FX_ground6",
-	"FX_lens_flare", "FX_lens_flare2", 
-	"FX_spark", "FX_spark2", "FX_sunlight", "FX_sunlight"
-];
+const slotsToHide = ["FX_groun3"];
 
 function hideSpecifiedSlots() {
 	if (!showLensflare && spineData && spineData.skeleton) {
