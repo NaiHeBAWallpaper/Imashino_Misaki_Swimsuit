@@ -49,7 +49,8 @@ const subtitleLocales = {
 	Chinese: 'zh-Hans',
 	TraditionalChinese: 'zh-Hant',
 	Japanese: 'ja',
-	Korean: 'ko'
+	Korean: 'ko',
+	Thai: 'th'
 };
 let isVoicelinePlaying = false;
 
@@ -71,17 +72,18 @@ const AUDIO_DETAIL = [
                 "A bit more... Dig out here too..."
             ],
             Chinese: [
-                "嗯……。",
-                "再一点……这边也削一削……。"
+                "嗯嗯嗯唔……",
+                "这边不对称，再挖掉一点吧……"
             ],
             TraditionalChinese: [
-                "嗯……。",
-                "再一點……這邊也削一削……。"
+                "嗯……",
+                "再稍微……把這邊也削掉……"
             ],
             Korean: [
-                "음……",
-                "조금 더... 여기서도 파고..."
-            ]
+                "음…….",
+                "조금 더…… 이쪽도 파내고……."
+            ],
+            Thai: ["อืม...","ขุดลงไปตรงนี้... อีกหน่อย..."]
         }
     },
     {
@@ -95,17 +97,18 @@ const AUDIO_DETAIL = [
                 "...Hm, I suppose that should do it."
             ],
             Chinese: [
-                "在这里加根枝条……这个角度……。",
-                "……嗯，这样应该可以了。"
+                "这根树枝，这个角度应该可以吧。",
+                "嗯，这样形状就多少像那么回事了……"
             ],
             TraditionalChinese: [
-                "在這裡加根枝條……這個角度……。",
-                "……嗯，這樣應該可以了。"
+                "這裡插上樹枝……從這個角度……",
+                "……嗯，這樣就行了吧。"
             ],
             Korean: [
-                "그리고 이 스틱은... 여기 갈 수 있습니다...",
-                "...그게 충분할 것 같아요"
-            ]
+                "여기에 나뭇가지를…… 이 각도로…….",
+                "……응, 이걸로 됐으려나."
+            ],
+            Thai: ["เอากิ่งไม้ตรงนี้... มาแต่งมุมตรงนี้...","อื้อ... เสร็จเรียบร้อยแล้วละนะ"]
         }
     },
     {
@@ -119,17 +122,18 @@ const AUDIO_DETAIL = [
                 "Why am I the one building this...?"
             ],
             Chinese: [
-                "……咦？",
-                "我为什么会在堆沙堡……？"
+                "……等一下。",
+                "总觉得有点奇怪。我为什么在费劲巴拉地堆沙堡啊……？"
             ],
             TraditionalChinese: [
-                "咦？",
-                "我為什麼會在堆沙堡……？"
+                "……咦？",
+                "為什麼我，會在堆沙堡這種東西……？"
             ],
             Korean: [
-                "어라?",
-                "왜 내가 이런 건물을 짓는 거야?"
-            ]
+                "……어라?",
+                "왜 내가 모래성 같은 걸 만들고 있는 거지……?"
+            ],
+            Thai: ["เอ๋...?","ทำไมฉันถึงเหมือนกำลัง ก่อปราสาททรายอยู่เลยล่ะ...?"]
         }
     },
     {
@@ -141,14 +145,15 @@ const AUDIO_DETAIL = [
                 "...Ugh! Sensei...!"
             ],
             Chinese: [
-                "……啊！老师……！"
+                "啧……老师。"
             ],
             TraditionalChinese: [
-                "……啊！老師……！"
+                "……唔！老師……！"
             ],
             Korean: [
-                "상사님!"
-            ]
+                "……읏! 선생님……!"
+            ],
+            Thai: ["อึก...! คุณครู...!"]
         }
     },
     {
@@ -162,17 +167,18 @@ const AUDIO_DETAIL = [
                 "...Don't think I'm enjoying this, not at all!"
             ],
             Chinese: [
-                "你一开始就想让我变成这样吧……！",
-                "……我可一点都不开心！真的一点都没有！"
+                "你从一开始就是故意让我堆沙堡的吧？",
+                "就算，你想让我开心，我也不想开心……！"
             ],
             TraditionalChinese: [
-                "你一開始就想讓我變成這樣吧……！",
-                "……我可一點都不開心！真的一點都沒有！"
+                "你從一開始就在打這種主意吧……！",
+                "……我完全，就連一點都不覺得好玩！"
             ],
             Korean: [
-                "그래서 이게 네 계획이었어...",
-                "...나는 이것을 즐기지 않는다고 생각하지 마세요, 전혀!"
-            ]
+                "처음부터 이럴 계획이었구나……!",
+                "……전혀, 요만큼도 즐기고 있지 않으니까!"
+            ],
+            Thai: ["วางแผนเอาไว้ อยู่แล้วสินะ...!","บอกแล้วไงว่า... ไม่ได้สนุกเลยแม้แต่นิดเดียว!"]
         }
     }
 ];
@@ -297,7 +303,7 @@ function playVoiceline() {
 			track.play().catch(finish);
 
 			if (dialogBox) {
-				textbox.textContent = dialog[window.selectedLanguage][index];
+				textbox.textContent = getSubtitleText(dialog, window.selectedLanguage, index);
 				textbox.style.opacity = 1;
 			}
 		},
@@ -473,6 +479,16 @@ function setMouse(event) {
 	return { x: ax - canvas.width * positionX, y: ay - canvas.height * positionY };
 }
 
+function getSubtitleText(dialog, language, index) {
+	let text = dialog?.[language]?.[index];
+	if (text == null && language === 'Thai') {
+		language = 'English';
+		text = dialog?.[language]?.[index];
+	}
+	textbox.lang = subtitleLocales[language];
+	return text ?? "";
+}
+
 function updateSubtitleLanguage() {
 	let language = subtitleLanguagePreference;
 	if (language === 'auto') {
@@ -486,6 +502,8 @@ function updateSubtitleLanguage() {
 			language = 'Japanese';
 		} else if (primary === 'ko' || primary === 'korean' || primary === 'koreana') {
 			language = 'Korean';
+		} else if (primary === 'th' || primary === 'thai') {
+			language = 'Thai';
 		} else {
 			language = 'English';
 		}
@@ -495,7 +513,7 @@ function updateSubtitleLanguage() {
 	window.selectedLanguage = language;
 	textbox.lang = subtitleLocales[language];
 	const clip = currentTracks.at(-1);
-	if (dialogBox && clip) textbox.textContent = clip.dialog[language][clip.index];
+	if (dialogBox && clip) textbox.textContent = getSubtitleText(clip.dialog, language, clip.index);
 }
 
 function init() {
